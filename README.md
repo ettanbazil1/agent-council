@@ -46,9 +46,23 @@ Use it as a tool to think with, not as a process gate.
 
 ## What's in this repo
 
-- [`SKILL.md`](SKILL.md) — the full specification: rounds, briefs, stop rules, resilience, adversarial hardening, telemetry, history.
+- [`SKILL.md`](SKILL.md) — the full specification: rounds, stop rules, resilience, adversarial hardening, telemetry, history.
+- [`prompts/`](prompts/) — the literal prompt templates the orchestrator sends to each subagent. Subagents don't read SKILL.md (they get fresh contexts), so everything they need is in their template.
+  - [`prompts/lenses/`](prompts/lenses/) — canonical lens briefs (Quality, Cost, Speed, Stability, Security). One file per lens. Defines what the lens obsesses over, what it does NOT, and the failure tells it must call out.
+  - `prompts/R1-specialist.md`, `R2-specialist.md`, `R3-architect.md`, `R4-reviewer.md`, `R6-architect-revision.md`, `R7-reviewer-pass-2.md` — one per role, with `{{slots}}` for the orchestrator to fill in.
 - `README.md` — this file.
 - `LICENSE` — MIT.
+
+## How an orchestrator uses the skill
+
+When a user types `/agent-council`, the orchestrator (Claude Code, or any harness that loads Claude Skills):
+
+1. Reads `SKILL.md` to learn the round structure, stop rules, and round briefs.
+2. For each round, opens the relevant template in `prompts/` and fills in the slots (decision question, lens brief, peer outputs, named flashpoints, etc.).
+3. Sends the filled-in template as the user message to a fresh subagent (typically `subagent_type: general-purpose`).
+4. Collects the subagent's output, validates against the schema where applicable, and feeds it into the next round's template.
+
+The subagent has no memory of previous runs, no access to SKILL.md, and no orchestrator state beyond what's literally in its prompt. That's why the templates are explicit about everything: dissent contract, lens-lock rule, schema, plain-language requirement, injection-defence wrappers.
 
 ## A note on the failure mode this skill is designed to catch
 
